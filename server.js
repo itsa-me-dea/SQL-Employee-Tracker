@@ -84,6 +84,9 @@ const startApp = () => {
       case "Add Department":
         addDepartment();
         break;
+      case "Delete...":
+        deleteOptions();
+        break;
       default:
         db.end(); // End MySQL inquirer when the user chooses to quit
         break;
@@ -97,9 +100,32 @@ const questions = () => {
       type: 'list',
       name: 'task',
       message: 'What would you like to do?',
-      choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit"]
-    },
-  ]);
+      choices: [
+        "View All Employees",
+        "Add Employee",
+        "Update Employee Role",
+        "View All Roles",
+        "Add Role",
+        "View All Departments",
+        "Add Department",
+        new inquirer.Separator(),
+        "Delete...",
+        "Quit"
+      ]
+    }
+  ]).then((answers) => {
+    if (answers.task === "Delete...") {
+      return inquirer.prompt([
+        {
+          type: 'list',
+          name: 'deleteTask',
+          message: 'What would you like to delete?',
+          choices: ["Employee", "Role", "Department", "Exit"]
+        }
+      ]);
+    }
+    return answers;
+  });
 };
 
 const viewAllEmployees = () => {
@@ -377,4 +403,41 @@ const addDepartment = () => {
       startApp();
     });
   });
+};
+
+const deleteOptions = () => {
+  inquirer
+    .prompt([
+      {
+        type: 'list',
+        name: 'deleteTask',
+        message: 'What would you like to delete?',
+        choices: ["Employee", "Role", "Department", "Exit"]
+      }
+    ])
+    .then(answers => {
+      const { deleteTask } = answers;
+
+      if (deleteTask === "Employee") {
+        deleteEmployee();
+      } else if (deleteTask === "Role") {
+        deleteRole();
+      } else if (deleteTask === "Department") {
+        deleteDepartment();
+      } else {
+        startApp();
+      }
+    });
+};
+
+const deleteEmployee = () => {
+  
+};
+
+const deleteRole = () => {
+  
+};
+
+const deleteDepartment = () => {
+  
 };
