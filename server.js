@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+const Table = require('cli-table3');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -102,7 +103,21 @@ const questions = () => {
 };
 
 const viewAllEmployees = () => {
-  const query = `SELECT * FROM employees`;
+  const query = `
+    SELECT 
+      employee.id, 
+      employee.first_name, 
+      employee.last_name, 
+      role.title AS role, 
+      department.name AS department, 
+      role.salary, 
+      CONCAT(manager.first_name, ' ', manager.last_name) AS manager 
+    FROM 
+      employee 
+    LEFT JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id 
+    LEFT JOIN employee manager ON employee.manager_id = manager.id
+  `;
 
   db.query(query, (err, results) => {
     if (err) {
@@ -110,27 +125,151 @@ const viewAllEmployees = () => {
       return;
     }
 
-    // Display the employee data
-    console.log('All Employees:');
-    results.forEach(employee => {
-      console.log(`ID: ${employee.id} | Name: ${employee.first_name} ${employee.last_name} | Role: ${employee.role_id}`);
+    // Display the employee data as a table
+    const table = new Table({
+      head: ['ID', 'First Name', 'Last Name', 'Job Title', 'Department', 'Salary', 'Manager'],
+      colWidths: [10, 20, 20, 20, 20, 15, 25]
     });
+
+    results.forEach(employee => {
+      table.push([
+        employee.id,
+        employee.first_name,
+        employee.last_name,
+        employee.role,
+        employee.department,
+        employee.salary,
+        employee.manager
+      ]);
+    });
+
+    console.log('All Employees:');
+    console.log(table.toString());
 
     startApp();
   });
 };
 
-
 const addEmployee = () => {
- 
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'firstName',
+        message: 'Enter employee first name:'
+      },
+      {
+        type: 'input',
+        name: 'lastName',
+        message: 'Enter employee last name:'
+      },
+      {
+        type: 'input',
+        name: 'roleId',
+        message: 'Enter employee role ID:'
+      },
+      {
+        type: 'input',
+        name: 'managerId',
+        message: 'Enter employee manager ID (optional, leave blank if none):'
+      }
+    ])
+    .then(answers => {
+      const { firstName, lastName, roleId, managerId } = answers;
+
+      const query = `
+        INSERT INTO employee (first_name, last_name, role_id, manager_id)
+        VALUES (?, ?, ?, ?)
+      `;
+
+      const values = [firstName, lastName, roleId, managerId || null];
+
+      db.query(query, values, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        console.log('Employee added successfully!');
+        startApp();
+      });
+    });
 };
 
 const updateEmployee = () => {
- 
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'employeeId',
+        message: 'Enter the ID of the employee you want to update:'
+      },
+      {
+        type: 'input',
+        name: 'roleId',
+        message: 'Enter the new role ID for the employee:'
+      },
+      {
+        type: 'input',
+        name: 'managerId',
+        message: 'Enter the new manager ID for the employee (optional, leave blank if none):'
+      }
+    ])
+    .then(answers => {
+      const { employeeId, roleId, managerId } = answers;
+
+      const query = `
+        UPDATE employee 
+        SET role_id = ?, manager_id = ? 
+        WHERE id = ?
+      `;
+
+      const values = [roleId, managerId || null, employeeId];
+
+      db.query(query, values, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        console.log('Employee updated successfully!');
+        startApp();
+      });
+    });
 };
 
 const viewRoles = () => {
- 
+  const query = `
+    SELECT 
+      role.id AS role_id,
+      role.title AS job_title,
+      role.salary,
+      department.name AS department
+    FROM 
+      role
+    LEFT JOIN department ON role.department_id = department.id
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return;
+    }
+
+    const table = new Table({
+      head: ['Role ID', 'Job Title', 'Salary', 'Department'],
+      colWidths: [15, 30, 15, 30]
+    });
+
+    results.forEach(role => {
+      table.push([role.role_id, role.job_title, role.salary, role.department]);
+    });
+
+    console.log('All Roles:');
+    console.log(table.toString());
+
+    startApp();
+  });
 };
 
 const addRole = () => {
@@ -138,7 +277,38 @@ const addRole = () => {
 };
 
 const viewDepartments = () => {
- 
+  const query = `
+    SELECT 
+      department.id AS department_id,
+      department.name AS department_name,
+      SUM(role.salary) AS budget
+    FROM 
+      department
+    LEFT JOIN role ON department.id = role.department_id
+    LEFT JOIN employee ON role.id = employee.role_id
+    GROUP BY department.id
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return;
+    }
+
+    const table = new Table({
+      head: ['Department ID', 'Department Name', 'Budget'],
+      colWidths: [20, 30, 20]
+    });
+
+    results.forEach(department => {
+      table.push([department.department_id, department.department_name, department.budget]);
+    });
+
+    console.log('All Departments:');
+    console.log(table.toString());
+
+    startApp();
+  });
 };
 
 const addDepartment = () => {
