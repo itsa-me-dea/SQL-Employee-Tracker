@@ -273,7 +273,44 @@ const viewRoles = () => {
 };
 
 const addRole = () => {
- 
+  inquirer
+  .prompt([
+    {
+      type: 'input',
+      name: 'roleTitle',
+      message: 'Enter role title:'
+    },
+    {
+      type: 'input',
+      name: 'salary',
+      message: 'Enter role salary:'
+    },
+    {
+      type: 'input',
+      name: 'departmentId',
+      message: 'Enter department ID:'
+    }
+  ])
+  .then(answers => {
+    const { roleTitle, salary, departmentId } = answers;
+
+    const query = `
+      INSERT INTO role (title, salary, department_id)
+      VALUES (?, ?, ?)
+    `;
+
+    const values = [roleTitle, salary, departmentId];
+
+    db.query(query, values, (err, results) => {
+      if (err) {
+        console.error('Error executing SQL query:', err);
+        return;
+      }
+
+      console.log('Role added successfully!');
+      startApp();
+    });
+  });
 };
 
 const viewDepartments = () => {
@@ -312,9 +349,32 @@ const viewDepartments = () => {
 };
 
 const addDepartment = () => {
- 
-};
+  inquirer
+  .prompt([
+    {
+      type: 'input',
+      name: 'departmentName',
+      message: 'Enter department name:'
+    }
+  ])
+  .then(answers => {
+    const { departmentName } = answers;
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+    const query = `
+      INSERT INTO department (name)
+      VALUES (?)
+    `;
+
+    const values = [departmentName];
+
+    db.query(query, values, (err, results) => {
+      if (err) {
+        console.error('Error executing SQL query:', err);
+        return;
+      }
+
+      console.log('Department added successfully!');
+      startApp();
+    });
+  });
+};
