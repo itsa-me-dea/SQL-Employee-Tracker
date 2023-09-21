@@ -1,125 +1,150 @@
 const express = require('express');
-// Import and require mysql2
 const mysql = require('mysql2');
+const inquirer = require('inquirer');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-// Express middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// Connect to database
-const db = mysql.createConnection(
-  {
-    host: 'localhost',
-    // MySQL username,
-    user: 'root',
-    // TODO: Add MySQL password here
-    password: '',
-    database: 'company_db'
-  },
-  console.log(`Connected to the company_db database.`)
-);
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'm@inWeiRDoR007598',
+  database: 'company_db'
+});
 
-// Create a movie
-app.post('/api/new-movie', ({ body }, res) => {
-  const sql = `INSERT INTO movies (movie_name)
-    VALUES (?)`;
-  const params = [body.movie_name];
-  
-  db.query(sql, params, (err, result) => {
+db.connect(err => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+    return;
+  }
+  console.log(`
+    ,ggggggg,                                                                               
+  ,dP""""""Y8b                               ,dPYb,                                         
+  d8'    a  Y8                               IP' Yb                                         
+  88     "Y8P'                               I8  8I                                         
+   8baaaa                                    I8  8'                                         
+ ,d8P""""      ,ggg,,ggg,,ggg,   gg,gggg,    I8 dP    ,ggggg,   gg     gg   ,ggg,    ,ggg,  
+ d8"          ,8" "8P" "8P" "8,  I8P"  "Yb   I8dP    dP"  "Y8gggI8     8I  i8" "8i  i8" "8i 
+ Y8,          I8   8I   8I   8I  I8'    ,8i  I8P    i8'    ,8I  I8,   ,8I  I8, ,8I  I8, ,8I 
+  Yba,,_____,,dP   8I   8I   Yb,,I8 _  ,d8' ,d8b,_ ,d8,   ,d8' ,d8b, ,d8I   YbadP'   YbadP' 
+    "Y88888888P'   8I   8I    Y8PI8 YY88888P8P'"Y88P"Y8888P"   P""Y88P"888888P"Y888888P"Y888
+                                 I8                                  ,d8I'                  
+                                 I8                                ,dP'8I                   
+                                 I8                               ,8"  8I                   
+                                 I8                               I8   8I                   
+                                 I8                                8, ,8I                   
+                                 I8                                 Y8P"                    
+                                 ,ggg, ,ggg,_,ggg,                                                                        
+                                 dP  Y8dP  Y88P  Y8b                                                                       
+                                 Yb,  88'   88'   88                                                                       
+                                   "  88    88    88                                                                       
+                                      88    88    88                                                                       
+                                      88    88    88    ,gggg,gg   ,ggg,,ggg,     ,gggg,gg    ,gggg,gg   ,ggg,    ,gggggg, 
+                                      88    88    88   dP"  "Y8I  ,8" "8P" "8,   dP"  "Y8I   dP"  "Y8I  i8" "8i   dP""""8I 
+                                      88    88    88  i8'    ,8I  I8   8I   8I  i8'    ,8I  i8'    ,8I  I8, ,8I  ,8'    8I 
+                                      88    88    Y8,,d8,   ,d8b,,dP   8I   Yb,,d8,   ,d8b,,d8,   ,d8I   YbadP' ,dP     Y8,
+                                      88    88     Y8P"Y8888P" Y88P'   8I    Y8P"Y8888P" Y8P"Y8888P"888888P"Y8888P       Y8
+                                                                                                  ,d8I'                    
+                                                                                                ,dP'8I                     
+                                                                                               ,8"  8I                     
+                                                                                               I8   8I                     
+                                                                                                8, ,8I                     
+                                                                                                 Y8P"                      
+  `)
+
+  // Start the application after connecting to the database
+  startApp();
+});
+
+const startApp = () => {
+  questions().then((answers) => {
+    switch (answers.task) {
+      case "View All Employees":
+        viewAllEmployees();
+        break;
+      case "Add Employee":
+        addEmployee();
+        break;
+      case "Update Employee Role":
+        updateEmployee();
+        break;
+      case "View All Roles":
+        viewRoles();
+        break;
+      case "Add Role":
+        addRole();
+        break;
+      case "View All Departments":
+        viewDepartments();
+        break;
+      case "Add Department":
+        addDepartment();
+        break;
+      default:
+        db.end(); // End MySQL inquirer when the user chooses to quit
+        break;
+    }
+  });
+};
+
+const questions = () => {
+  return inquirer.prompt([
+    {
+      type: 'list',
+      name: 'task',
+      message: 'What would you like to do?',
+      choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit"]
+    },
+  ]);
+};
+
+const viewAllEmployees = () => {
+  const query = `SELECT * FROM employees`;
+
+  db.query(query, (err, results) => {
     if (err) {
-      res.status(400).json({ error: err.message });
+      console.error('Error executing SQL query:', err);
       return;
     }
-    res.json({
-      message: 'success',
-      data: body
+
+    // Display the employee data
+    console.log('All Employees:');
+    results.forEach(employee => {
+      console.log(`ID: ${employee.id} | Name: ${employee.first_name} ${employee.last_name} | Role: ${employee.role_id}`);
     });
+
+    startApp();
   });
-});
+};
 
-// Read all movies
-app.get('/api/movies', (req, res) => {
-  const sql = `SELECT id, movie_name AS title FROM movies`;
-  
-  db.query(sql, (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-       return;
-    }
-    res.json({
-      message: 'success',
-      data: rows
-    });
-  });
-});
 
-// Delete a movie
-app.delete('/api/movie/:id', (req, res) => {
-  const sql = `DELETE FROM movies WHERE id = ?`;
-  const params = [req.params.id];
-  
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      res.statusMessage(400).json({ error: res.message });
-    } else if (!result.affectedRows) {
-      res.json({
-      message: 'Movie not found'
-      });
-    } else {
-      res.json({
-        message: 'deleted',
-        changes: result.affectedRows,
-        id: req.params.id
-      });
-    }
-  });
-});
+const addEmployee = () => {
+ 
+};
 
-// Read list of all reviews and associated movie name using LEFT JOIN
-app.get('/api/movie-reviews', (req, res) => {
-  const sql = `SELECT movies.movie_name AS movie, reviews.review FROM reviews LEFT JOIN movies ON reviews.movie_id = movies.id ORDER BY movies.movie_name;`;
-  db.query(sql, (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({
-      message: 'success',
-      data: rows
-    });
-  });
-});
+const updateEmployee = () => {
+ 
+};
 
-// BONUS: Update review name
-app.put('/api/review/:id', (req, res) => {
-  const sql = `UPDATE reviews SET review = ? WHERE id = ?`;
-  const params = [req.body.review, req.params.id];
+const viewRoles = () => {
+ 
+};
 
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-    } else if (!result.affectedRows) {
-      res.json({
-        message: 'Movie not found'
-      });
-    } else {
-      res.json({
-        message: 'success',
-        data: req.body,
-        changes: result.affectedRows
-      });
-    }
-  });
-});
+const addRole = () => {
+ 
+};
 
-// Default response for any other request (Not Found)
-app.use((req, res) => {
-  res.status(404).end();
-});
+const viewDepartments = () => {
+ 
+};
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const addDepartment = () => {
+ 
+};
+
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });

@@ -128,3 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# My additions
+Criteria.md
+Assets/12-sql-homework-demo-01.png
+Assets/12-sql-homework-video-thumbnail.png

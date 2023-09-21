@@ -33,25 +33,3 @@ CREATE TABLE employee (
 );
 
 SOURCE db/seeds.sql;
-
--- department list: engineering, finance, legal, sales
-
--- roles: title, salary, department
--- sales lead, sales, 100000
--- salesperson, sales, 80000
--- lead engineer, engineering, 150000
--- software engineer, engineering, 120000
--- account manager, finance, 160000
--- accountant, finance, 125000
--- legal team lead, legal, 250000
--- lawyer, legal, 190000
-
--- employees: first, last, title, manager
--- john doe, sales lead, null
--- mike chan, salesperson, john doe
--- ashley rodriguez, lead engineer, null
--- kevin tupik, software engineer, ashley rodriguez
--- kunal singh, account manager, null
--- malia brown, accountant, legal team lead, null
--- sarah lourd, legal team lead, null
--- tom allen, lawyer, sarah lourd
