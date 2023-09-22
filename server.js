@@ -66,6 +66,12 @@ const startApp = () => {
       case "View All Employees":
         viewAllEmployees();
         break;
+      case "View Employees by Manager":
+        viewEmployeesByManager();
+        break;
+      case "View Employees by Department":
+        viewEmployeesByDepartment();
+        break;
       case "Add Employee":
         addEmployee();
         break;
@@ -77,6 +83,9 @@ const startApp = () => {
         break;
       case "Add Role":
         addRole();
+        break;
+      case "Update Role":
+        updateRole();
         break;
       case "View All Departments":
         viewDepartments();
@@ -108,10 +117,16 @@ const questions = () => {
       message: 'What would you like to do?',
       choices: [
         "View All Employees",
+        "View Employees by Manager",
+        "View Employees by Department",
+        new inquirer.Separator(),
         "Add Employee",
         "Update Employee Role",
+        new inquirer.Separator(),
         "View All Roles",
         "Add Role",
+        "Update Role",
+        new inquirer.Separator(),
         "View All Departments",
         "Add Department",
         new inquirer.Separator(),
@@ -337,6 +352,53 @@ const addRole = () => {
   });
 };
 
+const updateRole = () => {
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'roleId',
+        message: 'Enter the ID of the role you want to update:'
+      },
+      {
+        type: 'input',
+        name: 'newTitle',
+        message: 'Enter the new title for the role:'
+      },
+      {
+        type: 'input',
+        name: 'newSalary',
+        message: 'Enter the new salary for the role:'
+      },
+      {
+        type: 'input',
+        name: 'newDepartmentId',
+        message: 'Enter the new department ID for the role:'
+      }
+    ])
+    .then(answers => {
+      const { roleId, newTitle, newSalary, newDepartmentId } = answers;
+
+      const query = `
+        UPDATE role 
+        SET title = ?, salary = ?, department_id = ? 
+        WHERE id = ?
+      `;
+
+      const values = [newTitle, newSalary, newDepartmentId, roleId];
+
+      db.query(query, values, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        console.log('Role updated successfully!');
+        startApp();
+      });
+    });
+};
+
 const viewDepartments = () => {
   const query = `
     SELECT 
@@ -403,6 +465,7 @@ const addDepartment = () => {
   });
 };
 
+// BONUS
 const deleteEmployee = () => {
   return inquirer
     .prompt([
@@ -491,3 +554,125 @@ const deleteDepartment = () => {
       });
     });
 };
+
+const viewEmployeesByManager = () => {
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'managerId',
+        message: 'Enter the ID of the manager:'
+      }
+    ])
+    .then(answers => {
+      const { managerId } = answers;
+
+      const query = `
+        SELECT 
+          e.id,
+          e.first_name,
+          e.last_name,
+          role.title AS job_title,
+          department.name AS department,
+          role.salary,
+          CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name
+        FROM 
+          employee e
+        LEFT JOIN role ON e.role_id = role.id
+        LEFT JOIN department ON role.department_id = department.id
+        LEFT JOIN employee manager ON e.manager_id = manager.id
+        WHERE manager.id = ?
+      `;
+
+      db.query(query, managerId, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        // Display the employee data as a table
+        const table = new Table({
+          head: ['ID', 'First Name', 'Last Name', 'Job Title', 'Department', 'Salary', 'Manager'],
+          colWidths: [10, 20, 20, 20, 20, 15, 25]
+        });
+
+        results.forEach(employee => {
+          table.push([
+            employee.id,
+            employee.first_name,
+            employee.last_name,
+            employee.job_title,
+            employee.department,
+            employee.salary,
+            employee.manager_name
+          ]);
+        });
+
+        console.log(`Employees reporting to Manager ID ${managerId}:`);
+        console.log(table.toString());
+        startApp();
+      });
+    });
+};
+
+const viewEmployeesByDepartment = () => {
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'departmentId',
+        message: 'Enter the ID of the department:'
+      }
+    ])
+    .then(answers => {
+      const { departmentId } = answers;
+
+      const query = `
+        SELECT 
+          e.id,
+          e.first_name,
+          e.last_name,
+          role.title AS job_title,
+          department.name AS department,
+          role.salary,
+          CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name
+        FROM 
+          employee e
+        LEFT JOIN role ON e.role_id = role.id
+        LEFT JOIN department ON role.department_id = department.id
+        LEFT JOIN employee manager ON e.manager_id = manager.id
+        WHERE department.id = ?
+      `;
+
+      db.query(query, departmentId, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        // Display the employee data as a table
+        const table = new Table({
+          head: ['ID', 'First Name', 'Last Name', 'Job Title', 'Department', 'Salary', 'Manager'],
+          colWidths: [10, 20, 20, 20, 20, 15, 25]
+        });
+
+        results.forEach(employee => {
+          table.push([
+            employee.id,
+            employee.first_name,
+            employee.last_name,
+            employee.job_title,
+            employee.department,
+            employee.salary,
+            employee.manager_name
+          ]);
+        });
+
+        console.log(`Employees in Department ID ${departmentId} (${results[0].department}):`);
+        console.log(table.toString());
+        startApp();
+      });
+    });
+};
+
+
