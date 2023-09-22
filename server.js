@@ -84,8 +84,14 @@ const startApp = () => {
       case "Add Department":
         addDepartment();
         break;
-      case "Delete...":
-        deleteOptions();
+      case "Delete Employee":
+        deleteEmployee();
+        break;
+      case "Delete Role":
+        deleteRole();
+        break;
+      case "Delete Department":
+        deleteDepartment();
         break;
       default:
         db.end(); // End MySQL inquirer when the user chooses to quit
@@ -109,23 +115,15 @@ const questions = () => {
         "View All Departments",
         "Add Department",
         new inquirer.Separator(),
-        "Delete...",
-        "Quit"
+        "Delete Employee",
+        "Delete Role",
+        "Delete Department",
+        new inquirer.Separator(),
+        "Quit",
+        new inquirer.Separator()
       ]
     }
-  ]).then((answers) => {
-    if (answers.task === "Delete...") {
-      return inquirer.prompt([
-        {
-          type: 'list',
-          name: 'deleteTask',
-          message: 'What would you like to delete?',
-          choices: ["Employee", "Role", "Department", "Exit"]
-        }
-      ]);
-    }
-    return answers;
-  });
+  ]);
 };
 
 const viewAllEmployees = () => {
@@ -405,39 +403,91 @@ const addDepartment = () => {
   });
 };
 
-const deleteOptions = () => {
-  inquirer
+const deleteEmployee = () => {
+  return inquirer
     .prompt([
       {
-        type: 'list',
-        name: 'deleteTask',
-        message: 'What would you like to delete?',
-        choices: ["Employee", "Role", "Department", "Exit"]
+        type: 'input',
+        name: 'employeeId',
+        message: 'Enter the ID of the employee you want to delete:'
       }
     ])
     .then(answers => {
-      const { deleteTask } = answers;
+      const { employeeId } = answers;
 
-      if (deleteTask === "Employee") {
-        deleteEmployee();
-      } else if (deleteTask === "Role") {
-        deleteRole();
-      } else if (deleteTask === "Department") {
-        deleteDepartment();
-      } else {
-        startApp();
-      }
+      const query = `
+        DELETE FROM employee 
+        WHERE id = ?
+      `;
+
+      return new Promise((resolve, reject) => {
+        db.query(query, employeeId, (err, results) => {
+          if (err) {
+            console.error('Error executing SQL query:', err);
+            return;
+          }
+      
+          console.log('Employee deleted successfully!');
+          startApp();
+        });
     });
-};
-
-const deleteEmployee = () => {
-  
+  });
 };
 
 const deleteRole = () => {
-  
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'roleId',
+        message: 'Enter the ID of the role you want to delete:'
+      }
+    ])
+    .then(answers => {
+      const { roleId } = answers;
+
+      const query = `
+        DELETE FROM role 
+        WHERE id = ?
+      `;
+
+      db.query(query, roleId, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        console.log('Role deleted successfully!');
+        startApp();
+      });
+    });
 };
 
 const deleteDepartment = () => {
-  
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'departmentId',
+        message: 'Enter the ID of the department you want to delete:'
+      }
+    ])
+    .then(answers => {
+      const { departmentId } = answers;
+
+      const query = `
+        DELETE FROM department 
+        WHERE id = ?
+      `;
+
+      db.query(query, departmentId, (err, results) => {
+        if (err) {
+          console.error('Error executing SQL query:', err);
+          return;
+        }
+
+        console.log('Department deleted successfully!');
+        startApp();
+      });
+    });
 };
